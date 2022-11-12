@@ -2,7 +2,7 @@
 #define MENU_H
 
 #include <vector>
-#include "system_functions.h"
+#include "system_functions.hh"
 
 //Menu is a class that show choices, get choices, and exicute choices.
 
@@ -20,7 +20,7 @@ class ManagerMenu:Menu{
     private:
         bool Verification();		
         void Show();				//show choices
-        std::vector<SystemFunction*> system_function_list_;	//the functionlist is used to store the functions defined as classes in system_functions.h
+        std::vector<SystemFunction*> system_function_list_;	//the functionlist is used to store the functions defined as classes in system_functions.hh
         bool is_administer_ = false;
 };
 

@@ -1,6 +1,6 @@
 #ifndef SYSTEM_FUNCTION_H
 #define SYSTEM_FUNCTION_H
-#include "system_manage.h"
+#include "system_manage.hh"
 #include <string>
 // This is a class to execute the functions in the student menu and managerMenu.
 

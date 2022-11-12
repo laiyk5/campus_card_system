@@ -1,4 +1,4 @@
-#include "data_types.h"
+#include "data_types.hh"
 
 #include <iostream>
 using std::cin;

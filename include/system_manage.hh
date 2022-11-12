@@ -1,8 +1,8 @@
 #ifndef SYSTEM_MANAGE_H
 #define SYSTEM_MANAGE_H
 
-#include "system_functions.h"
-#include "data_types.h"
+#include "system_functions.hh"
+#include "data_types.hh"
 #include <string>
 
 //this is a class for file and data management

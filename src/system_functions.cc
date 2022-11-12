@@ -1,11 +1,11 @@
-#include "system_functions.h"
+#include "system_functions.hh"
 
 #include <iostream>
 #include <string>
 #include <vector>
 #include <fstream>
 #include <climits>
-#include "data_types.h"
+#include "data_types.hh"
 
 using std::iostream;
 using std::cout;
