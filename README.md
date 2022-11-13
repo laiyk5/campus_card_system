@@ -1,23 +1,35 @@
 # Campus Card System
 
-Campus card system provide a unified interface for administrators and users.
-
-Students can use it to consume, check their balance, declare the lost of their campus card and show their identities. Managers can check and update student's information easily with this system.
-
 ## Introduction
+
+This toy project is continuously evoling. I'will continuously experiment new tech I learn with it, and this project will be treated as seriously as I could to make it readable.
+
+## Building Guides
+
+- GNU Make 4.3
+- clang 14.0.0
+- libmysqlcppconn-dev 8.0+ (installed globally)
+- mysql 8.0+
+
+```sh
+# first start mysql sever at localhost
+sudo systemctl start mysql
+# build project
+cd your-directory-location
+make clean
+make
+# initialize the database
+make reset_database
+# run the executable
+./build/bin/campus_card_system
+```
+
+## Usage
 
 ### For Administrator
 
-You're provided with an super admin account(id=`000`, passwd=`628`), which could manage all managers.
-
-- Only super administrator could manage administrator's account. You should only use it when you need to CRUD admins' accounts.
-- All administrator could manage any student's account.
-- Student's card will be deleted if the student is removed from the system.
-- Student's old card will be deleted if you bind new card to her/him.
+As the only administrator, you're provided with an super admin account(id=`1`, passwd=`qwer`).
 
 ### For Students
 
-- The initial passwd is `0`
-- `Activate`: Change the passwd to activate it. (passwd should be shorter than 6 digits)
-- `Lost`: Set your card as `lost` would make the card unable to recharge and pay.
-
+Your id is allocated by administrator, and the passwd defaults to be `0`.
