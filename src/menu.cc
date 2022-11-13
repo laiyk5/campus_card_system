@@ -6,27 +6,22 @@
 
 #include <mysql-cppconn-8/mysqlx/xdevapi.h>
 
-using std::cin;
-using std::cout;
-using std::endl;
-using std::string;
-
 
 //modifiable IO function. It make the program more readable and IO more tidy. 
-int GetInt(int min, int max, string que, string w_que){
+int GetInt(int min, int max, std::string que, std::string w_que){
     int ret;
-    cout << que;
-    cin >> ret;
+    std::cout << que;
+    std::cin >> ret;
     
 
-    while(!cin.good() || ret < min || ret > max){
+    while(!std::cin.good() || ret < min || ret > max){
         char ch;
         while((ch = getchar()) != '\n' ){
             continue;
         }
-        cout << w_que;
-        cin.clear();
-        cin >> ret;
+        std::cout << w_que;
+        std::cin.clear();
+        std::cin >> ret;
     }
     
     char ch;
@@ -76,14 +71,14 @@ void ManagerMenu::Run(){
 
 
 void ManagerMenu::Show(){
-    cout << "\n================MANAGER MENU=================\n" << endl;
+    std::cout << "\n================MANAGER MENU=================\n" << std::endl;
     int i = -1;
-    cout << "\t" << i++ << "-" << "Exit" << endl;
-    cout << "\t " << i++ << "-" << "Show" << endl;
+    std::cout << "\t" << i++ << "-" << "Exit" << std::endl;
+    std::cout << "\t " << i++ << "-" << "Show" << std::endl;
     for(auto && system_function : system_function_list_){
-        cout << "\t " << i++ << "-" << system_function->GetFunctionName()<< endl;
+        std::cout << "\t " << i++ << "-" << system_function->GetFunctionName()<< std::endl;
     }
-    cout << "\n==============================================\n" << endl;
+    std::cout << "\n==============================================\n" << std::endl;
 }
 
 
@@ -133,14 +128,14 @@ void StudentMenu::Run(){
 
 
 void StudentMenu::Show(){
-    cout << "\n================= STUDENT MENU =================\n" << endl;
+    std::cout << "\n================= STUDENT MENU =================\n" << std::endl;
     int i = -1;
-    cout << "\t" << i++ << "-" << "Exit" << endl;
-    cout << "\t " << i++ << "-" << "Show" << endl;
+    std::cout << "\t" << i++ << "-" << "Exit" << std::endl;
+    std::cout << "\t " << i++ << "-" << "Show" << std::endl;
     for(auto && system_function : system_function_list_){
-        cout << "\t " << i++ << "-" << system_function->GetFunctionName()<< endl;
+        std::cout << "\t " << i++ << "-" << system_function->GetFunctionName()<< std::endl;
     }
-    cout << "\n=================================================\n" << endl;
+    std::cout << "\n=================================================\n" << std::endl;
 }
 
 

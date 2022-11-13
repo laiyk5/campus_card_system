@@ -5,10 +5,6 @@
 #include <climits>
 #include "data_types.hh"
 
-using std::cout;
-using std::endl;   
-using std::cin;
-using std::string;
 
 template<typename Callable>
 void MysqlxSimpleErrorHandling(Callable f) {
@@ -20,11 +16,11 @@ void MysqlxSimpleErrorHandling(Callable f) {
 }
 
 //It's already defined in menu.cpp
- int GetInt(int min, int max, string que, string w_que);
+ int GetInt(int min, int max, std::string que, std::string w_que);
 //{
 //     int ret;
-//     cout << que;
-//     cin >> ret;
+//     std::cout << que;
+//     std::cin  >> ret;
 
 //     char ch;
 //     while((ch = getchar()) != '\n' ){
@@ -35,9 +31,9 @@ void MysqlxSimpleErrorHandling(Callable f) {
 //         while((ch = getchar()) != '\n' ){
 //             continue;
 //         }
-//         cout << w_que;
-//         cin.clear();
-//         cin >> ret;
+//         std::cout << w_que;
+//         std::cin.clear();
+//         std::cin  >> ret;
 //     }
 //     return ret;    
 // }
@@ -56,16 +52,16 @@ void MysqlxSimpleErrorHandling(Callable f) {
 void AdminAddStudent::DoTask(mysqlx::Session &session) {
     std::cout << std::string(20, '-') << this->GetFunctionName() << std::string(20, '-') << std::endl;
     //create a new student;
-    cout << "Please enter information as followed: \n";
+    std::cout << "Please enter information as followed: \n";
     int quit;
     std::string name, sex, school, major;
-    cout << "-----------------------------------\n";
-    cout << "quit?\tname\tsex\tschool\tmajor\n";
-    cout << "-----------------------------------" << endl;
-    cin >> quit;
+    std::cout << "-----------------------------------\n";
+    std::cout << "quit?\tname\tsex\tschool\tmajor\n";
+    std::cout << "-----------------------------------" << std::endl;
+    std::cin  >> quit;
     if(quit == -1) {return; }     //-1 to quit
 
-    cin >> name >> sex >> school >> major;
+    std::cin  >> name >> sex >> school >> major;
 
     MysqlxSimpleErrorHandling(
         [&session, name, sex, school, major](){
@@ -79,8 +75,8 @@ void AdminAddStudent::DoTask(mysqlx::Session &session) {
             auto student_id = res.getAutoIncrementValue();
             res = schema.getTable("card").insert("student_id").values(student_id).execute();
             auto card_id = res.getAutoIncrementValue();
-            cout << "New Student: " << student_id << endl;
-            cout << "New Campus card id: " << card_id << endl;
+            std::cout << "New Student: " << student_id << std::endl;
+            std::cout << "New Campus card id: " << card_id << std::endl;
         }
     );
 }
@@ -122,7 +118,7 @@ void AdminBindNewCard::DoTask(mysqlx::Session &session){
             table.remove().where("student_id = :s_id").bind("s_id", student_id).execute();
             auto res = table.insert("student_id").values(student_id).execute();
 
-            cout << "Bind New Card " << res.getAutoIncrementValue() << " to Student " << student_id << " now" << endl;
+            std::cout << "Bind New Card " << res.getAutoIncrementValue() << " to Student " << student_id << " now" << std::endl;
         }
     );
 
