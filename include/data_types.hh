@@ -18,9 +18,10 @@ class Student
         Student(int student_id,
                 std::string name , std::string sex, 
                 std::string school, std::string major,
-                int campus_card_id = -1)
-            : student_id_(student_id), campus_card_id_(campus_card_id),
-              name_(name), sex_(sex), school_(school), major_(major)
+                int campus_card_id)
+            : student_id_(student_id),
+              name_(name), sex_(sex), school_(school), major_(major),
+              campus_card_id_(campus_card_id)
         {
             //
         }
@@ -54,8 +55,8 @@ class CampusCard
     
     public:
     //Constructor
-        CampusCard(int campus_card_id, int passwd, int balance, bool state)
-            :campus_card_id_(campus_card_id), passwd_(passwd), balance_(balance), state_(state)
+        CampusCard(int campus_card_id, int student_id, int balance)
+            :campus_card_id_(campus_card_id), student_id_(student_id), balance_(balance)
         {
             //
         }
@@ -64,21 +65,8 @@ class CampusCard
     //as a list node;
         CampusCard* next_ = nullptr;
     //Get and Set
-        int GetCampusCardId()   { return campus_card_id_;   }
-        int GetPasswd()        { return passwd_;    }
-        int GetBalance()       { return balance_;   }
-        bool GetState()         { return state_;     }
-        int GetStudentId()      { return student_id_; }
-
-        void SetCampusCardId(int id) {campus_card_id_ = id; }
-        void SetBalance(int balance){ balance_ = balance; }
-        void SetPasswd(int passwd)  { passwd_ = passwd; }
-        void SetState(bool state)  { state_ = state;   }
-        void SetStudentId(int student_id)     { student_id_ = student_id; }
     private:
         int campus_card_id_ = 0;
-        int passwd_ = 0;
         int balance_ = 0;
-        bool state_ = false;
         int student_id_ = 0;
 };

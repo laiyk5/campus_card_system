@@ -3,43 +3,37 @@ BUILD=build
 BIN=$(BUILD)/bin
 OBJ=$(BUILD)/obj
 EXECUTABLE_NAME=campus_card_system
+CXX=clang++
 
 SOURCE_FILES=\
 	data_types.cc \
 	main.cc \
 	menu.cc \
 	system_functions.cc \
-	system_manage.cc \
-
-DATA_FILE_NAMES=\
-	campus_card_datas.dat \
-	consume_records.dat \
-	inpour_records.dat \
-	student_datas.dat \
 
 EXECUTABLE_FILES = $(EXECUTABLE_NAME:%=$(BIN)/%)
 OBJECT_FILES = $(SOURCE_FILES:%.cc=$(OBJ)/%.o)
-DATA_FILES = $(DATA_FILE_NAMES:%=$(BIN)/%)
 
-CXXFLAGS = -I include
+CPPFLAGS = -I include
+LDLIBS = -lmysqlcppconn8
+CXXFLAGS = -std=c++20
 
-build: $(EXECUTABLE_FILES) $(DATA_FILES)
+build: $(EXECUTABLE_FILES)
 
 clean:
 	rm -rf $(BUILD)
 
-.PHONY: build clean
+reset_database:
+	mysql --user=root --password < sql/reset.sql
+
+.PHONY: build clean reset_database
 
 $(EXECUTABLE_FILES): $(OBJECT_FILES)
 	@mkdir -p $(@D)
-	@$(LINK.cc) -o $@ $^
+	$(LINK.cc) $^ $(LDLIBS) -o $@
 	@echo "Build successful!"
 
-$(OBJECT_FILES): $(OBJ)/%.o: $(SRC)/%.cc
+$(OBJECT_FILES): $(OBJ)/%.o: $(SRC)/%.cc include/*.hh
 	@echo Compiling $<
 	@test -d $(@D) || mkdir -p $(@D)
 	@$(COMPILE.cc) -c -o $@ $<
-
-$(DATA_FILES): $(BIN)/%.dat:
-	@test -d $(@D) || mkdir -p $(@D)
-	@test -e $@ || touch $@; echo "Datafile $@ initialized."

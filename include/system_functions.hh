@@ -1,15 +1,13 @@
 #ifndef SYSTEM_FUNCTION_H
 #define SYSTEM_FUNCTION_H
-#include "system_manage.hh"
 #include <string>
+#include <mysql-cppconn-8/mysqlx/xdevapi.h>
 // This is a class to execute the functions in the student menu and managerMenu.
 
 //base class
 class SystemFunction{
     public:
         SystemFunction(std::string function_name): function_name_(function_name){ }
-        virtual void DoTask(){};
-        virtual void DoTask(int campus_card_id){};
         std::string GetFunctionName(){
             return function_name_;   
         }
@@ -18,7 +16,17 @@ class SystemFunction{
         std::string function_name_;
 };
 
+class AdminFunction: public SystemFunction {
+public:
+    AdminFunction(std::string function_name): SystemFunction(function_name) {}
+    virtual void DoTask(mysqlx::Session & session) {};
+};
 
+class UserFunction: public SystemFunction {
+public:
+    UserFunction(std::string function_name): SystemFunction(function_name) {}
+    virtual void DoTask(mysqlx::Session & session, int student_id) {};
+};
 
 
 //***************************************************************************************
@@ -28,128 +36,95 @@ class SystemFunction{
 
 
 
-class AddStudent: public SystemFunction{
+class AdminAddStudent: public AdminFunction{
     public:
-        AddStudent()
-            :SystemFunction("Add Student"){ }
-        void DoTask() override;
+        AdminAddStudent()
+            :AdminFunction("Add Student"){ }
+        void DoTask(mysqlx::Session &session) override;
 };
 
-class DeleteStudent: public SystemFunction{
+class AdminDeleteStudent: public AdminFunction{
     public:
-        DeleteStudent()
-            :SystemFunction("Delete Student"){ }
-        void DoTask() override;
+        AdminDeleteStudent()
+            :AdminFunction("Delete Student"){ }
+        void DoTask(mysqlx::Session &session) override;
 };
 
-class BindNewCard: public SystemFunction{
+class AdminBindNewCard: public AdminFunction{
     public:
-        BindNewCard()
-            :SystemFunction("Recreate a card for a student"){
+        AdminBindNewCard()
+            :AdminFunction("Recreate a card for a student"){
             //
         }
-        void DoTask() override;
+        void DoTask(mysqlx::Session &session) override;
 };
 
-class ShowStudent: public SystemFunction{
+class AdminShowStudent: public AdminFunction{
     public:
-        ShowStudent()
-            :SystemFunction("Show student"){
+        AdminShowStudent()
+            :AdminFunction("Show student"){
             //
         }
-        void DoTask() override;
+        void DoTask(mysqlx::Session &session) override;
 };
 
+class AdminShowCampusCard: public AdminFunction{
+    public:
+        AdminShowCampusCard()
+            :AdminFunction("Show campus card info"){
+            //
+        }
+        void DoTask(mysqlx::Session &session) override;
+};
 
-
+class AdminInpour: public AdminFunction{
+    public:
+        AdminInpour()
+            :AdminFunction("Inpour"){ }
+        void DoTask(mysqlx::Session &session) override;
+};
 
 
 //***************************************************************************************
 //student_functions
 //***************************************************************************************
 
-
-
-
-
-
-class ActivateCampusCard: public SystemFunction{
+class UserConsume: public UserFunction{
     public:
-        ActivateCampusCard()
-            :SystemFunction("Activate Campus Card"){ }
-        void DoTask(int campus_card_id) override;
-};
-
-
-class Consume: public SystemFunction{
-    public:
-        Consume()
-            :SystemFunction("Consume"){
+        UserConsume()
+            :UserFunction("Consume"){
             //
         }
-        void DoTask(int campus_card_id) override;
-};
-
-class Inpour: public SystemFunction{
-    public:
-        Inpour()
-            :SystemFunction("Inpour"){ }
-        void DoTask() override;
+        void DoTask(mysqlx::Session &session, int student_id) override;
 };
 
 
-
-class ReportLoss: public SystemFunction{
+class UserShowCampusCard: public UserFunction{
     public:
-        ReportLoss()
-            :SystemFunction("Report campus card loss"){ }
-        void DoTask(int campus_card_id) override;
-};
-
-
-
-//student and manager common functions
-class ShowCampusCard: public SystemFunction{
-    public:
-        ShowCampusCard()
-            :SystemFunction("Show campus card info"){
+        UserShowCampusCard()
+            :UserFunction("Show campus card info"){
             //
         }
-        void DoTask(int campus_card_id_) override;
-        void DoTask() override;
+        void DoTask(mysqlx::Session &session, int student_id) override;
 };
 
 
-
-
-class ShowConsumeRecords: public SystemFunction{
+class UserShowStudent: public UserFunction{
     public:
-        ShowConsumeRecords()
-            :SystemFunction("Show consume records"){
+        UserShowStudent()
+            :UserFunction("Show student info"){
             //
         }
-        void DoTask(int campus_card_id_) override;
+        void DoTask(mysqlx::Session &session, int student_id) override;
 };
 
-class ShowInpourRecords: public SystemFunction{
+class UserUpdatePasswd: public UserFunction{
     public:
-        ShowInpourRecords()
-            :SystemFunction("Show inpour records"){
+        UserUpdatePasswd()
+            :UserFunction("Update Passwd") {
             //
         }
-        void DoTask(int campus_card_id_) override;
+        void DoTask(mysqlx::Session &session, int student_id) override;
 };
-
-
-
-class ShowStudentInfo: public SystemFunction{
-    public:
-        ShowStudentInfo()
-            :SystemFunction("Show student info"){
-            //
-        }
-        void DoTask(int campus_card_id_) override;
-};
-
 
 #endif 

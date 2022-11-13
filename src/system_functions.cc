@@ -2,20 +2,22 @@
 
 #include <iostream>
 #include <string>
-#include <vector>
-#include <fstream>
 #include <climits>
 #include "data_types.hh"
 
-using std::iostream;
 using std::cout;
 using std::endl;   
 using std::cin;
 using std::string;
-using std::vector;
-using std::fstream;
-using std::ios;
 
+template<typename Callable>
+void MysqlxSimpleErrorHandling(Callable f) {
+    try {
+        f();
+    } catch (mysqlx::Error e) {
+        std::cout << e.what() << std::endl;
+    }
+}
 
 //It's already defined in menu.cpp
  int GetInt(int min, int max, string que, string w_que);
@@ -46,346 +48,290 @@ using std::ios;
 
 
 //***************************************************************************************
-//Student Operations
+//Administrator's Operations
 //****************************************************************************************
 
 
 
-void AddStudent::DoTask(){
-    cout << "---------------------Add Student---------------------(-1 to quit)" << endl;
+void AdminAddStudent::DoTask(mysqlx::Session &session) {
+    std::cout << std::string(20, '-') << this->GetFunctionName() << std::string(20, '-') << std::endl;
     //create a new student;
     cout << "Please enter information as followed: \n";
-    int student_id;
+    int quit;
     std::string name, sex, school, major;
     cout << "-----------------------------------\n";
-    cout << "student id\tname\tsex\tschool\tmajor\n";
+    cout << "quit?\tname\tsex\tschool\tmajor\n";
     cout << "-----------------------------------" << endl;
-    cin >> student_id;
-    if(student_id == -1) {return; }     //-1 to quit
+    cin >> quit;
+    if(quit == -1) {return; }     //-1 to quit
 
     cin >> name >> sex >> school >> major;
-    
-    Student* student_ptr = new Student(student_id, name, sex, school, major);
 
-    //check if it's duplicated
-    if(system_manage.SearchStudent(student_id) != nullptr){
-        cout << "Student has already exist.\n";
-        return;
-    }
-
-    //create new card;
-    int campus_card_id = system_manage.GetNewCampusCardId();
-    CampusCard* CampusCard_ptr = new CampusCard(campus_card_id, 0, 0, false);
-    CampusCard_ptr->SetStudentId(student_id);
-    //bind new card to the student.
-    student_ptr->SetCampusCardId(campus_card_id);
-
-    //add student and campus card to the list.
-    system_manage.AddStudent(student_ptr);
-    system_manage.AddCampusCard(CampusCard_ptr);
-
-    system_manage.WriteData();
-
-    cout << "New Student: " << student_id << endl;
-    cout << "New Campus card id: " << campus_card_id << endl;
+    MysqlxSimpleErrorHandling(
+        [&session, name, sex, school, major](){
+            auto schema = session.getSchema("campus");
+            mysqlx::Result res;
+            res = schema.getTable("student").insert(
+                    "name", "sex", "school", "major"
+                ).values(
+                    name, sex, school, major  
+                    ).execute();
+            auto student_id = res.getAutoIncrementValue();
+            res = schema.getTable("card").insert("student_id").values(student_id).execute();
+            auto card_id = res.getAutoIncrementValue();
+            cout << "New Student: " << student_id << endl;
+            cout << "New Campus card id: " << card_id << endl;
+        }
+    );
 }
 
 
 
 
-void DeleteStudent::DoTask(){
+void AdminDeleteStudent::DoTask(mysqlx::Session &session) {
     //get Student;
-    cout << "----------------DeleteStudent-----------------(-1 to quit)" << endl;
+    std::cout << std::string(20, '-') << this->GetFunctionName() << std::string(20, '-') << std::endl;
     int student_id = GetInt(-1, INT16_MAX, "==> student ID: ", "==> Invalid ID. Please try again: ");
 
     if(student_id == -1) {return; }      //-1 to quit;
 
-    Student* student_ptr = system_manage.SearchStudent(student_id);
-    //check
-    if(student_ptr == nullptr){
-        cout << "Student does not exit!" << endl;
-        return;
+    try {
+        session.getSchema("campus")
+               .getTable("student")
+               .remove()
+               .where("id=:sid")
+               .bind("sid",student_id)
+               .execute();
+        std::cout << "OK, student " << student_id << " deleted" << std::endl;
+    } catch (mysqlx::Error e) {
+        std::cout << e.what() << std::endl;
     }
-
-    //get CampusCard Id
-    int campus_card_id = student_ptr->GetCampusCardId();
-    CampusCard* campus_card_ptr = system_manage.SearchCampusCard(campus_card_id);
-    //check
-    if(campus_card_ptr == nullptr){
-        cout << "Campus card does not exit!" << endl;
-    }
-
-    //delete student and his/her campus card;
-    system_manage.DeleteStudent(student_ptr);
-    system_manage.DeleteCampusCard(campus_card_ptr);
-
-    system_manage.WriteData();
-
-    cout << "Deleted Student: " << student_id << endl;
-    cout << "Deleted Campus card id: " << campus_card_id << endl;
 }
 
 
-
-
-void BindNewCard::DoTask(){
-    cout << "-----------------------Bind New Card--------------------(-1 to quit)" << endl;
+void AdminBindNewCard::DoTask(mysqlx::Session &session){
+    std::cout << std::string(20, '-') << this->GetFunctionName() << std::string(20, '-') << std::endl;
     //get student;
     int student_id = GetInt(-1, INT16_MAX, "==> student ID: ", "==> Invalid ID. Please try again: ");
     if(student_id == -1) {return; }           //-1 to quit
 
-    Student* student_ptr = system_manage.SearchStudent(student_id);
-    
-    //check student
-    if(student_ptr == nullptr) {
-	    cout << "Student does not exist!"<< endl;
-		return; 
-	}
-    //get old card
-    CampusCard* old_campus_card_ptr = system_manage.SearchCampusCard(student_ptr->GetCampusCardId());
-    
-    //create and add new card;
-    CampusCard* campus_card_ptr = new CampusCard(*old_campus_card_ptr);
-    campus_card_ptr->SetState(false);
-    campus_card_ptr->SetPasswd(0);
-    
-    campus_card_ptr->SetCampusCardId(system_manage.GetNewCampusCardId());    
-    campus_card_ptr->SetStudentId(student_id);
-    system_manage.AddCampusCard(campus_card_ptr);
+    MysqlxSimpleErrorHandling(
+        [&session, student_id](){
+            auto schema = session.getSchema("campus");
+            auto table = schema.getTable("card");
+            table.remove().where("student_id = :s_id").bind("s_id", student_id).execute();
+            auto res = table.insert("student_id").values(student_id).execute();
 
-    //bind
-    student_ptr->SetCampusCardId(campus_card_ptr->GetCampusCardId());
-    
-    //delete old card;
-    if(old_campus_card_ptr != nullptr){
-        system_manage.DeleteCampusCard(old_campus_card_ptr);
-    }
+            cout << "Bind New Card " << res.getAutoIncrementValue() << " to Student " << student_id << " now" << endl;
+        }
+    );
 
-    system_manage.WriteData();
-
-    cout << "New Card: " << campus_card_ptr->GetCampusCardId() << " belongs to Student " << student_id << endl;
 }
 
+static inline void ShowCampusCardHelper(mysqlx::Session &session, int card_id) {
+    MysqlxSimpleErrorHandling(
+        [&session, card_id](){
+            auto card = session.getSchema("campus").getTable("card");
+            auto res = card.select("id", "student_id", "balance").where("id = :c_id").bind("c_id", card_id).execute();
+            auto row = res.fetchOne();
+            if (row) {
+                CampusCard(row[0], row[1], row[2]).Show();
 
+            } else {
+                std::cerr << "Card " << card_id << " Not Found." << std::endl;
+            }
+        }
+    );
+}
 
+void AdminShowCampusCard::DoTask(mysqlx::Session &session){
+    std::cout << std::string(20, '-') << this->GetFunctionName() << std::string(20, '-') << std::endl;
+  //get target campus card
+    int card_id = GetInt(-1, INT16_MAX, "==> campus card id: ", "==> Invalid ID, please try again.");
+    if(-1 == card_id ) {return; }
+    
+    ShowCampusCardHelper(session, card_id);
+}
 
+static inline void ShowStudentHelper(mysqlx::Session &session, int student_id) {
+    MysqlxSimpleErrorHandling(
+        [&session, student_id](){
+            auto table = session.getSchema("campus").getTable("student");
+            auto res = table.select("id", "name", "sex", "school", "major").where("id = :s_id").bind("s_id", student_id).execute();
+            auto row = res.fetchOne();
+            if (row) {
+                int student_id(row[0]);
+                std::string name(row[1]), sex(row[2]), school(row[3]), major(row[4]);
+                row = session.getSchema("campus").getTable("card").select("id").where("student_id = :s_id").bind("s_id", student_id).execute().fetchOne();
+                if (row) {
+                    int card_id(row[0]);
+                    Student(student_id, name, sex, school, major, card_id).Show();
+                } else {
+                    std::cerr << "Card with student_id " << student_id << " Not Found." << std::endl;
+                    return;
+                }
+            } else {
+                std::cerr << "Student " << student_id << " Not Found." << std::endl;
+                return;
+            }
+        }
+    );
+}
 
-void ShowStudent::DoTask(){
-    //getStudent
-    cout << "(-1 to quit)" << endl;
+void AdminShowStudent::DoTask(mysqlx::Session &session){
+    std::cout << std::string(20, '-') << this->GetFunctionName() << std::string(20, '-') << std::endl;
     int student_id = GetInt(-1, INT16_MAX, "==> student ID: ", "==> Invalid ID. Please try again: ");
     if(student_id == -1) {return; }
     
-    Student* student_ptr = system_manage.SearchStudent(student_id);
-
-    //check
-    if(student_ptr == nullptr){
-        cout << "Students does not exit!" << endl;
-        return;
-    }
-    //print
-    student_ptr->Show();
+    ShowStudentHelper(session, student_id);
 }
 
 
 
-
-
-
-//***************************************************************************************
-//Student Operations
-//****************************************************************************************
-
-
-
-
-
-void ActivateCampusCard::DoTask(int campus_card_id){
-	cout << "------------------- Activate campus card -------------------(-1 to quit)" << endl;
-    //Get pointer of the target CampusCard 
-    CampusCard* CampusCard_ptr = system_manage.SearchCampusCard(campus_card_id) ;
-    
-    //Activate it
-    CampusCard_ptr->SetState(true);
-    //modify the passwd
-
-    int passwd = GetInt(-1, INT16_MAX, "Please enter your new passwd: ", "Invalid passwd. Please try again: ");
-    if(passwd == -1) {return; }
-    
-    while(passwd == 0 || passwd == CampusCard_ptr->GetPasswd()){
-        passwd = GetInt(0, INT16_MAX, "Invalid passwd. Please try again: ",  "Invalid passwd. Please try again: ");
-    }
-
-    CampusCard_ptr->SetPasswd(passwd);
-
-    cout << "Passwd of your Campus Card has been reset.\n";
-    cout << "Card Activated" << endl;
-    return;
-
-    system_manage.WriteData();
-}
-
-
-
-
-
-void Consume::DoTask(int campus_card_id){
-    cout << "-----------------------Consume---------------------(-1 to quit)" << endl;
-	//get target campus card
-    CampusCard* campus_card_ptr = system_manage.SearchCampusCard(campus_card_id);
-    
-    //check if it's activated
-    if(!campus_card_ptr->GetState()){
-        cout << "\nPlease activate the campus card first.\n" << endl;
-        return;
-    }
-    
-    int amount;
-    //get amount and Consume
-    while(true){
-        amount = GetInt(-1, 500, "==>Amount: ","==>No more than $500 and no less than $0. Please try again: ");
-        if(amount == -1) {return; }
-        
-        if(amount > campus_card_ptr->GetBalance()){
-            cout << "Your balance is not enough. " << endl;
-            return;
-        }else{
-            break;
-        }
-    }
-
-    
-    int new_balance = campus_card_ptr->GetBalance() - amount;
-    campus_card_ptr->SetBalance(new_balance);
-    
-    system_manage.Record("consume_records.dat", campus_card_id,  amount);
-
-
-    system_manage.WriteData();
-
-}
-
-
-
-
-
-void Inpour::DoTask(){
-	cout << "-----------------------Inpour------------------------(-1 to quit)" << endl;
+void AdminInpour::DoTask(mysqlx::Session &session) {
+    std::cout << std::string(20, '-') << this->GetFunctionName() << std::string(20, '-') << std::endl;
     //get target campus card
-    int campus_card_id = GetInt(0, INT16_MAX, "==> campus card ID: ", "==> Invalid ID. Please try again: ");
-    CampusCard* campus_card_ptr = system_manage.SearchCampusCard(campus_card_id);
-    
-    //check
-    if(campus_card_ptr == nullptr){
-        cout << "This card is not exist!" << endl;
+    int campus_card_id = -1;
+    std::cout << "==> campus card ID: " << std::flush;
+    std::cin >> campus_card_id;
+    if (campus_card_id == -1) {
         return;
     }
-
-    //get amount and inpour
-    int amount = GetInt(-1, 500, "==>Amount: ","==>No more than $500 and no less than $0. Please try again: ");
-    if(amount == -1) {return; }
     
-    int new_balance = campus_card_ptr->GetBalance() + amount;
-    campus_card_ptr->SetBalance(new_balance);
-
-    system_manage.Record("inpour_records.dat", campus_card_id, amount);
-
-    cout << "Added balance: " << amount << endl;
-    cout << "current balance: " << new_balance << endl;
-
-    system_manage.WriteData();
-}
-
-
-
-
-
-void ReportLoss::DoTask(int campus_card_id){
-
-    CampusCard* campus_card_ptr = system_manage.SearchCampusCard(campus_card_id);
-    
-    campus_card_ptr->SetState(false);
-    cout << "Your card has already to be set as \"LOSS\". But you can activate it again. \n\n";
-
-    system_manage.WriteData();
-}
-
-
-
-
-void ShowCampusCard::DoTask(){
-  //get target campus card
-    cout << "(-1 to quit)" << endl;
-    int campus_card_id = GetInt(0, INT16_MAX, "==> campus card id: ", "==> Invalid ID, please try again.");
-    if(-1 == campus_card_id ) {return; }
-    
-    DoTask(campus_card_id);       
-}
-
-
-void ShowCampusCard::DoTask(int campus_card_id){
-    //get target campus card;
-    CampusCard* campus_card_ptr = system_manage.SearchCampusCard(campus_card_id);
-    if(campus_card_ptr == nullptr){
-        cout << "Card does not exit!" << endl;
+    int old_balance = -1;
+    MysqlxSimpleErrorHandling(
+        [& session, campus_card_id, &old_balance](){
+            auto table = session.getSchema("campus").getTable("card");
+            auto res = table.select("balance").where("id = :c_id").bind("c_id", campus_card_id).execute();
+            auto row = res.fetchOne();
+            if (!row.isNull()) {
+                old_balance = row[0];
+            } else {
+                std::cerr << "Card " << campus_card_id << " Not found." << std::endl;
+            }
+        }
+    );
+    if (old_balance == -1) {
         return;
     }
-    //show campus_card_ptr;
-    campus_card_ptr->Show();
-}
-
-
-
-
-
-void ShowConsumeRecords::DoTask(int campus_card_id){
-    fstream inFile;
-    inFile.open("consume_records.dat", ios::in);
-    int id, amount;
-    string day, month, date, time, year;
-    cout << "CardId" << "\t" << "amount" << "\t" << "time" << endl;
-    while(!inFile.eof()){
-        inFile >> id >> amount >> day >> month >> date >> time >> year;
-        if(!inFile.eof()){
-        	break;
-		}
-        if(id == campus_card_id){
-            cout << id << "\t" << amount << "\t" 
-                << day << " " << month << " " << date << " "
-                << time<< " " << year << " " << endl;
+    
+    if (old_balance == -1) {
+        return;
+    }
+    
+    MysqlxSimpleErrorHandling(
+        [& session, old_balance](){
+            auto table = session.getSchema("campus").getTable("card");
+            int amount = GetInt(-1000, 500, "==> Amount: ","==> No more than $500 and no less than $0. Please try again: ");
+            if(amount == -1) {return; }
+            auto res = table.update().set("balance", old_balance + amount).execute();
+            std::cout << "Success. Balance updated from " << old_balance << " to " << old_balance + amount << std::endl;
         }
-    }   
+    );
 }
 
 
 
-void ShowInpourRecords::DoTask(int campus_card_id){
-    fstream inFile;
-    inFile.open("inpour_records.dat", ios::in);
-    int id, amount;
-    string day, month, date, time, year;
-    cout << "CardId" << "\t" << "amount" << "\t" << "time" << endl;
-    while(!inFile.eof()){ 
-        inFile >> id >> amount >> day >> month >> date >> time >> year;
-        if(!inFile.eof()){
-        	break;
-		}
-        if(id == campus_card_id){
-            cout << id << "\t" << amount << "\t" 
-                << day << " " << month << " " << date << " "
-                << time<< " " << year << " " << endl;
+
+// //***************************************************************************************
+// //Student Operations
+// //****************************************************************************************
+
+
+void UserConsume::DoTask(mysqlx::Session &session, int card_id){
+    std::cout << std::string(20, '-') << this->GetFunctionName() << std::string(20, '-') << std::endl;	
+    
+    MysqlxSimpleErrorHandling(
+        [&session, card_id](){
+            auto table = session.getSchema("campus")
+                                .getTable("card");
+            auto row = table.select("balance")
+                            .where("id = :cid")
+                            .bind("cid", card_id)
+                            .execute()
+                            .fetchOne();
+            if (!row) {
+                std::cerr << "The card id " << card_id << " is invalid." << std::endl;
+                return;
+            }
+            int old_balance = row[0];
+            int amount = GetInt(-1, 500, "==> Amount: ","==> No more than $500 and no less than $0. Please try again: ");
+            if (amount == -1) {
+                return;
+            }
+            int new_balance = old_balance - amount;
+            if (new_balance < 0) {
+                std::cerr << "Not Enough Balance in the Account" << std::endl;
+                return;
+            }
+            table.update()
+                 .set("balance", new_balance)
+                 .where("id = :cid")
+                 .bind("cid", card_id)
+                 .execute();
         }
-    }    
+    );
 }
 
 
+void UserShowCampusCard::DoTask(mysqlx::Session &session, int card_id){
+    std::cout << std::string(20, '-') << this->GetFunctionName() << std::string(20, '-') << std::endl;
+    ShowCampusCardHelper(session, card_id);
+}
 
 
-void ShowStudentInfo::DoTask(int campus_card_id_){
-    CampusCard* campus_card_ptr = system_manage.SearchCampusCard(campus_card_id_);
-    int student_id = campus_card_ptr->GetStudentId();
-    Student* student_ptr = system_manage.SearchStudent(student_id);
+void UserShowStudent::DoTask(mysqlx::Session &session, int card_id){
+    std::cout << std::string(20, '-') << this->GetFunctionName() << std::string(20, '-') << std::endl;
+    MysqlxSimpleErrorHandling(
+        [&session, card_id](){
+            auto row = session.getSchema("campus")
+                              .getTable("card")
+                              .select("student_id")
+                              .where("id=:cid")
+                              .bind("cid", card_id)
+                              .execute()
+                              .fetchOne();
+            if (!row) {
+                std::cout << "Card ID " << card_id << " invalid." << std::endl;
+                return;
+            }
+            ShowStudentHelper(session, row[0]);
+        }
+    );
+}
 
-    student_ptr->Show();
 
+void UserUpdatePasswd::DoTask(mysqlx::Session &session, int card_id){
+    std::cout << std::string(20, '-') << this->GetFunctionName() << std::string(20, '-') << std::endl;
+    MysqlxSimpleErrorHandling(
+        [&session, card_id](){
+            std::string newpasswd;
+            auto row = session.getSchema("campus")
+                              .getTable("card")
+                              .select("student_id")
+                              .where("id=:cid")
+                              .bind("cid", card_id)
+                              .execute()
+                              .fetchOne();
+            if (!row) {
+                std::cout << "Card ID " << card_id << " invalid." << std::endl;
+                return;
+            }
+
+            int student_id = row[0];
+            
+            std::cout << "==> New Passwd: " << std::endl;
+            std::cin >> newpasswd;
+
+            session.getSchema("campus")
+                   .getTable("student")
+                   .update()
+                   .set("passwd", newpasswd)
+                   .where("id=:sid")
+                   .bind("sid", student_id)
+                   .execute();
+
+            std::cout << "OK, passwd updated." << std::endl;
+        }
+    );
 }

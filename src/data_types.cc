@@ -39,9 +39,7 @@ void Student::Show(){
 std::ostream& operator<<(std::ostream& os, const CampusCard& campus_card)
 {   
     os << campus_card.campus_card_id_ << " "
-       << campus_card.passwd_   << " "
        << campus_card.balance_  << " "
-       << campus_card.state_    << " "
        << campus_card.student_id_;
 
     return os;
@@ -49,11 +47,9 @@ std::ostream& operator<<(std::ostream& os, const CampusCard& campus_card)
 
 void CampusCard::Show(){
     cout << "\n---------------CAMPUSCARD INFO---------------\n";
-    std::cout   << "campus_card_id\t" << "passwd\t" << "balance\t" << "state\t" << "student_id\n";
+    std::cout   << "campus_card_id\t" << "balance\t" << "student_id\n";
     std::cout   << campus_card_id_ << "\t\t"
-                << passwd_         << "\t"
                 << balance_        << "\t"
-                << state_          << "\t"
                 << student_id_     << "\n";
     cout << "\n---------------------------------------------\n\n";
 }

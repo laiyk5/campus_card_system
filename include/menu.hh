@@ -3,47 +3,40 @@
 
 #include <vector>
 #include "system_functions.hh"
+#include <mysql-cppconn-8/mysqlx/xdevapi.h>
 
 //Menu is a class that show choices, get choices, and exicute choices.
 
 class Menu{
     public:
+        Menu(mysqlx::Session &&session): session(std::move(session)) {
+            ;
+        }
         virtual void Run() = 0;	//Menus' core function: show choices, get choices, and exicute them.
+    protected:
+        mysqlx::Session session;
 };
 
-class ManagerMenu:Menu{
+class ManagerMenu: public Menu{
     public:
-        ManagerMenu();		//The default Constructor is used to construct and initialize the system_functions. 
+        ManagerMenu(mysqlx::Session &&session);		//The default Constructor is used to construct and initialize the system_functions. 
 
         void Run();
 
     private:
-        bool Verification();		
         void Show();				//show choices
-        std::vector<SystemFunction*> system_function_list_;	//the functionlist is used to store the functions defined as classes in system_functions.hh
-        bool is_administer_ = false;
+        std::vector<std::unique_ptr<AdminFunction>> system_function_list_;	//the functionlist is used to store the functions defined as classes in system_functions.hh
 };
 
 
-class StudentMenu:Menu{
+class StudentMenu: public Menu{
     public:
-        StudentMenu();
+        StudentMenu(mysqlx::Session &&session, int card_id);		//The default Constructor is used to construct and initialize the system_functions. 
         void Run();
     private:
         void Show();
-        bool Verification();
-        std::vector<SystemFunction*> system_function_list_;
-        int campus_card_id_;
+        int card_id_;
+        std::vector<std::unique_ptr<UserFunction>> system_function_list_;	//the functionlist is used to store the functions defined as classes in system_functions.hh
 };
 
-
-//MainMenu
-class MainMenu:Menu{
-    public:
-        void Run(); // UI: choose which submenu to enter. 
-    private:
-        void show();
-        StudentMenu student_menu_;
-        ManagerMenu manager_menu_;
-};
 #endif
