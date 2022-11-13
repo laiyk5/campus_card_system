@@ -6,7 +6,6 @@ EXECUTABLE_NAME=campus_card_system
 CXX=clang++
 
 SOURCE_FILES=\
-	data_types.cc \
 	main.cc \
 	menu.cc \
 	system_functions.cc \
